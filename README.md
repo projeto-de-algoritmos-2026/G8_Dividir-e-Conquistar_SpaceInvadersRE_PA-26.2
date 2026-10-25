@@ -31,7 +31,7 @@ O jogo utiliza dois algoritmos clássicos de Divisão e Conquista para resolver 
 | ├── `core/` | Estruturas base do motor de jogo, abrangendo a gestão da janela do Raylib, controlo de estados (*Game Loop*) e gestão de *inputs*. |
 | └── `entities/` | Definição estrutural dos objetos do jogo: Nave do Jogador, Invasores individuais, Frota Inimiga completa e Projéteis. |
 | `src/` | Diretório raiz para a implementação do código-fonte (`.cpp`). Onde a mecânica é efetivamente programada. |
-| ├── `algorithms/` | Implementação detalhada e otimizada dos algoritmos (funções com complexidade $O(n)$ e $O(n \log n)$). |
+| ├── `algorithms/` | Implementação detalhada e otimizada dos algoritmos ( funções com complexidade $O(n)$ e $O(n \log n)$ ). |
 | ├── `core/` | Implementação do funcionamento global, inicialização gráfica e limpeza de memória. |
 | ├── `entities/` | Lógica de atualização posição/velocidade, processamento de colisões e desenho de cada entidade a cada *frame*. |
 | `src/main.cpp` | O ponto de entrada principal do programa (`int main()`), que instancia os sistemas e dá início à simulação. |
