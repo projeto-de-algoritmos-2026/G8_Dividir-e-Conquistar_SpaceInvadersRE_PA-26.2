@@ -1,8 +1,16 @@
 #pragma once
 #include <vector>
+#include <utility>
+#include "raylib.h"
 #include "entities/invader.hpp"
 
 namespace space_invaders::entities {
+
+    struct LightningEffect {
+        Vector2 start;
+        Vector2 end;
+        float lifetime;
+    };
 
     class Fleet {
     private:
@@ -14,6 +22,8 @@ namespace space_invaders::entities {
         float move_timer = 0.0f;      // Quanto tempo ja passou desde o último intervalo
         float move_interval = 0.5f;   // Intervalo entre cada salto
         bool is_frozen = false; // verificador para travar a frota quando ela chega no limite vertical
+        
+        std::vector<LightningEffect> active_lightnings;
 
     public:
         Fleet();
@@ -24,6 +34,10 @@ namespace space_invaders::entities {
 
         void draw() const;
         std::vector<Invader>& get_invaders();
+
+        void trigger_chain_lightning(Invader* origin, int max_targets = 3);
+        void update_effects();
+        void draw_effects() const;
     };
 
 }

@@ -1,5 +1,5 @@
 #include "entities/fleet.hpp"
-
+#include <algorithm>
 #include "raylib.h"
 
 namespace space_invaders::entities {
@@ -97,5 +97,52 @@ namespace space_invaders::entities {
 
     std::vector<Invader>& Fleet::get_invaders() {
         return invaders;
+    }
+
+    void Fleet::trigger_chain_lightning(Invader* origin, int max_targets) {
+        std::vector<std::pair<float, Invader*>> distances;
+
+        for (auto& inv : invaders) {
+            if (inv.is_alive && &inv != origin) {
+                float dx = inv.x - origin->x;
+                float dy = inv.y - origin->y;
+                distances.push_back({dx*dx + dy*dy, &inv});
+            }
+        }
+
+        std::sort(distances.begin(), distances.end(), [](const auto& a, const auto& b) {
+            return a.first < b.first;
+        });
+
+        int count = 0;
+        for (auto& pair : distances) {
+            if (count >= max_targets) break;
+
+            pair.second->is_alive = false;
+
+            active_lightnings.push_back(LightningEffect{
+                Vector2{origin->x + origin->width/2, origin->y + origin->height/2},
+                Vector2{pair.second->x + pair.second->width/2, pair.second->y + pair.second->height/2},
+                0.5f
+            });
+            count++;
+        }
+    }
+
+    void Fleet::update_effects() {
+        float dt = GetFrameTime();
+        for (auto& l : active_lightnings) l.lifetime -= dt;
+
+        active_lightnings.erase(
+            std::remove_if(active_lightnings.begin(), active_lightnings.end(), 
+                [](const LightningEffect& l){ return l.lifetime <= 0.0f; }),
+            active_lightnings.end()
+        );
+    }
+
+    void Fleet::draw_effects() const {
+        for (const auto& l : active_lightnings) {
+            DrawLineEx(l.start, l.end, 3.0f, Fade(BLUE, l.lifetime * 2.0f));
+        }
     }
 }

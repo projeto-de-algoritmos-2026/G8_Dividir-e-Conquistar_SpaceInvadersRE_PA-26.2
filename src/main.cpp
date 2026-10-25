@@ -36,6 +36,8 @@ int main() {
         float fleet_bottom_limit = player.get_position().y - 10.0f;
         enemy_fleet.update(static_cast<float>(screen_width), fleet_bottom_limit);
 
+        enemy_fleet.update_effects();
+
         // Obtém a referência do vetor para passar aos algoritmos
         auto& invaders = enemy_fleet.get_invaders();
 
@@ -61,10 +63,16 @@ int main() {
         auto* commander = space_invaders::algorithms::find_commander(invaders);
         auto closest_pair = space_invaders::algorithms::find_closest_pair(invaders);
 
+        if (IsKeyPressed(KEY_T) && closest_pair.first != nullptr && closest_pair.first->is_alive) {
+            closest_pair.first->is_alive = false;
+            enemy_fleet.trigger_chain_lightning(closest_pair.first, 3);
+        }
+
         // --- Renderização (Desenho) ---
         BeginDrawing();
         ClearBackground(BLACK);
         enemy_fleet.draw();
+        enemy_fleet.draw_effects();
 
         player.draw();
         for (const auto& p : player_projectiles) {
