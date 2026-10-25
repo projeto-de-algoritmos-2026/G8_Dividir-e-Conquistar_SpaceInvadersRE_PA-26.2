@@ -5,8 +5,8 @@
 #include "entities/player.hpp"
 
 int main() {
-    const int screen_width = 1280;
-    const int screen_height = 720;
+    constexpr int screen_width = 1280;
+    constexpr int screen_height = 720;
 
     InitWindow(screen_width, screen_height, "Space Invaders: Dividir e Conquistar");
     SetTargetFPS(60);
@@ -14,14 +14,14 @@ int main() {
     space_invaders::entities::Fleet enemy_fleet;
     enemy_fleet.generate_fleet(10, 25, 100.0f, 60.0f, 45.0f, 35.0f);
 
-    space_invaders::entities::Player player((screen_width / 2.0f) - 25.0f, (float)screen_height - 80.0f, 50.0f, 25.0f, 400.0f);
+    space_invaders::entities::Player player((screen_width / 2.0f) - 25.0f, static_cast<float>(screen_height) - 80.0f, 50.0f, 25.0f, 400.0f);
     std::vector<space_invaders::entities::Projectile> player_projectiles;
 
     while (!WindowShouldClose()) {
 
         // --- Atualização ---
 
-        auto new_shot = player.update((float)(screen_width));
+        auto new_shot = player.update(static_cast<float>(screen_width));
         // Garante que não serão inseridos elementos nulos
         if (new_shot.has_value()) {
             player_projectiles.push_back(new_shot.value());
@@ -34,7 +34,7 @@ int main() {
         }
         std::erase_if(player_projectiles, [](const auto& p) { return !p.is_active; });
         float fleet_bottom_limit = player.get_position().y - 10.0f;
-        enemy_fleet.update((float)(screen_width), fleet_bottom_limit);
+        enemy_fleet.update(static_cast<float>(screen_width), fleet_bottom_limit);
 
         // Obtém a referência do vetor para passar aos algoritmos
         auto& invaders = enemy_fleet.get_invaders();
@@ -80,7 +80,7 @@ int main() {
                 PURPLE
             );
             // apenas para testar depois remover e deixar apenas o contorno
-            DrawText("ALVO: COMANDANTE", (int)commander->x - 30, (int)commander->y - 15, 9, PURPLE);
+            DrawText("ALVO: COMANDANTE", static_cast<int>(commander->x) - 30, static_cast<int>(commander->y) - 15, 9, PURPLE);
         }
 
 
@@ -101,11 +101,11 @@ int main() {
                 BLUE
             );
             // apenas para testar depois remover e deixar apenas o contorno
-            DrawText("PAR MAIS PROXIMO", (int)p1->x, (int)p1->y - 15, 9, BLUE);
+            DrawText("PAR MAIS PROXIMO", static_cast<int>(p1->x), static_cast<int>(p1->y) - 15, 9, BLUE);
         }
 
         // Calcula dinamicamente quantas naves continuam com is_alive = true
-        int active_ships = static_cast<int>(std::count_if(invaders.begin(), invaders.end(), [](const auto& ship) {
+        int active_ships = static_cast<int>(std::ranges::count_if(invaders, [](const auto& ship) {
             return ship.is_alive;
         }));
 
