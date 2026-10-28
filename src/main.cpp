@@ -18,54 +18,48 @@ int main() {
     std::vector<space_invaders::entities::Projectile> player_projectiles;
 
     while (!WindowShouldClose()) {
-
         // --- Atualização ---
-
         auto new_shot = player.update(static_cast<float>(screen_width));
-        // Garante que não serão inseridos elementos nulos
         if (new_shot.has_value()) {
             player_projectiles.push_back(new_shot.value());
         }
 
-        // Atualização do cooldown dos projéteis
         float dt = GetFrameTime();
-        for (auto& p : player_projectiles) {
-            p.update(dt);
-        }
+        for (auto& p : player_projectiles) p.update(dt);
         std::erase_if(player_projectiles, [](const auto& p) { return !p.is_active; });
+        
         float fleet_bottom_limit = player.get_position().y - 10.0f;
         enemy_fleet.update(static_cast<float>(screen_width), fleet_bottom_limit);
-
         enemy_fleet.update_effects();
 
-        // Obtém a referência do vetor para passar aos algoritmos
         auto& invaders = enemy_fleet.get_invaders();
 
+        // 1. Executa os algoritmos ANTES das colisões para ter os alvos atualizados
+        auto* commander = space_invaders::algorithms::find_commander(invaders);
+        auto closest_pair = space_invaders::algorithms::find_closest_pair(invaders);
+
+        // 2. Loop de Colisões
         for (auto& p : player_projectiles) {
-            if (!p.is_active) continue; // Ignora tiros já desativados nesta frame
+            if (!p.is_active) continue;
 
             for (auto& invader : invaders) {
-                if (!invader.is_alive) continue; // Ignora naves já destruídas
+                if (!invader.is_alive) continue;
 
-                // Cria os retângulos de colisão
                 Rectangle proj_rect = {p.x, p.y, p.width, p.height};
                 Rectangle inv_rect = {invader.x, invader.y, invader.width, invader.height};
 
                 if (CheckCollisionRecs(proj_rect, inv_rect)) {
-                    invader.is_alive = false; // Destrói a nave
-                    p.is_active = false;      // Destrói o tiro
-                    break; // O tiro já atingiu um alvo, avança para o próximo tiro
+                    invader.is_alive = false; 
+                    p.is_active = false;      
+
+                    // Gatilho do Raio em Cadeia se acertar no Par Mais Próximo
+                    if (&invader == closest_pair.first || &invader == closest_pair.second) {
+                        enemy_fleet.trigger_chain_lightning(&invader, 3);
+                    }
+                    
+                    break; // Passa para o próximo tiro
                 }
             }
-        }
-
-        // Executa os algoritmos de Divisão e Conquista
-        auto* commander = space_invaders::algorithms::find_commander(invaders);
-        auto closest_pair = space_invaders::algorithms::find_closest_pair(invaders);
-
-        if (IsKeyPressed(KEY_T) && closest_pair.first != nullptr && closest_pair.first->is_alive) {
-            closest_pair.first->is_alive = false;
-            enemy_fleet.trigger_chain_lightning(closest_pair.first, 3);
         }
 
         // --- Renderização (Desenho) ---
