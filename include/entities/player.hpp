@@ -15,6 +15,9 @@ private:
     // Cooldown de disparo do player
     float shoot_cooldown = 0.4f;
     float time_since_last_shot = 0.0f;
+    // vida e tempo de invulnerabilidade
+    int lives = 3;
+    float invulnerability_timer = 0.0f;
 
 public:
     Player(float x, float y, float width, float height, float speed);

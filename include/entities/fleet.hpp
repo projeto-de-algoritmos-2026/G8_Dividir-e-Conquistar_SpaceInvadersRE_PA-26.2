@@ -1,8 +1,10 @@
 #pragma once
+#include <optional>
 #include <vector>
 #include <utility>
 #include "raylib.h"
 #include "entities/invader.hpp"
+#include "entities/projectile.hpp"
 
 namespace space_invaders::entities {
 
@@ -17,8 +19,9 @@ namespace space_invaders::entities {
         std::vector<Invader> invaders;
         int direction = 1; // 1 é para direita e -1 é para esquerda
         float step_x = 15.0f;         // Quantidade de pixels que a frota salta para o lado
-        float drop_distance = 20.0f;  // Quantidade de pixels que a frota desce ao bater na borda
-
+        float drop_distance = 20.0f;// Quantidade de pixels que a frota desce ao bater na borda
+        float shoot_cooldown = 1.0f;
+        float time_since_last_shot = 0.0f;
         float move_timer = 0.0f;      // Quanto tempo ja passou desde o último intervalo
         float move_interval = 0.5f;   // Intervalo entre cada salto
         bool is_frozen = false; // verificador para travar a frota quando ela chega no limite vertical
@@ -29,6 +32,7 @@ namespace space_invaders::entities {
         Fleet();
         ~Fleet() = default;
         void generate_fleet(int rows, int cols, float start_x, float start_y, float spacing_x, float spacing_y);
+        std::optional<Projectile> try_shoot(float dt);
 
         void update(float screen_width, float bottom_limit);
 
