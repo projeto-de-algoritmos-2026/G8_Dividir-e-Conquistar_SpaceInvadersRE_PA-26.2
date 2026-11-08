@@ -27,6 +27,8 @@ public:
 
     Vector2 get_position() const { return position;}
     Rectangle get_rect() const { return { position.x, position.y, size.x, size.y }; }
+    int get_lives() const { return lives; }
+    void take_damage();
 };
 
 } 
