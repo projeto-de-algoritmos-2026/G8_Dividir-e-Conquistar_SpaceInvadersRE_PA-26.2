@@ -51,7 +51,7 @@ int main() {
                 player_projectiles.push_back(new_shot.value());
             }
 
-            // NOVO: Atualiza Disparos dos Inimigos
+            // Atualiza Disparos dos Inimigos
             auto enemy_shot = enemy_fleet.try_shoot(dt);
             if (enemy_shot.has_value()) {
                 enemy_projectiles.push_back(enemy_shot.value());
@@ -68,7 +68,10 @@ int main() {
             enemy_fleet.update(static_cast<float>(screen_width), fleet_bottom_limit);
             enemy_fleet.update_effects();
 
-            // --- Colisões: Tiros do Jogador vs Naves ---
+            // Verifica se o escudo está ativo (Comandante vivo)
+            bool shield_active = (commander != nullptr && commander->is_alive);
+
+            // --- Colisões 1: Tiros do Jogador vs Naves ---
             for (auto& p : player_projectiles) {
                 if (!p.is_active) continue;
 
@@ -79,19 +82,26 @@ int main() {
                     Rectangle inv_rect = {invader.x, invader.y, invader.width, invader.height};
 
                     if (CheckCollisionRecs(proj_rect, inv_rect)) {
-                        invader.is_alive = false;
-                        p.is_active = false;
+                        p.is_active = false; // O tiro é absorvido
 
-                        // Gatilho do Raio em Cadeia
-                        if (&invader == closest_pair.first || &invader == closest_pair.second) {
-                            enemy_fleet.trigger_chain_lightning(&invader, 3);
+                        bool is_commander = (&invader == commander);
+                        bool is_closest_pair = (&invader == closest_pair.first || &invader == closest_pair.second);
+
+                        // A nave só morre se o escudo estiver desativado OU se for um dos alvos de exceção
+                        if (!shield_active || is_commander || is_closest_pair) {
+                            invader.is_alive = false;
+
+                            // Gatilho do Raio em Cadeia
+                            if (is_closest_pair) {
+                                enemy_fleet.trigger_chain_lightning(&invader, 3);
+                            }
                         }
                         break;
                     }
                 }
             }
 
-            // NOVO: Colisões: Tiros Inimigos vs Jogador
+            // --- Colisões 2: Tiros Inimigos vs Jogador ---
             for (auto& p : enemy_projectiles) {
                 if (!p.is_active) continue;
 
@@ -108,7 +118,7 @@ int main() {
             if (ships_alive_now == 0) {
                 current_state = GameState::VICTORY;
             }
-            //Derrota se o jogador ficar sem vidas
+            // Derrota se o jogador ficar sem vidas
             else if (player.get_lives() <= 0) {
                 current_state = GameState::GAME_OVER;
             }
@@ -152,8 +162,6 @@ int main() {
             }
 
             DrawText(TextFormat("Naves Ativas: %d", active_ships), 10, 10, 20, LIME);
-
-            // NOVO: Exibe as vidas do jogador no HUD
             DrawText(TextFormat("Vidas: %d", player.get_lives()), 10, 40, 20, RED);
             DrawText("USE AS SETAS OU 'A'/'D' PARA MOVER E 'ESPACO' PARA DISPARAR", 10, 70, 14, GRAY);
 

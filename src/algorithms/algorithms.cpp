@@ -21,11 +21,27 @@ namespace space_invaders::algorithms {
         for (auto& ship : fleet) {
             if (ship.is_alive) active_ships.push_back(&ship);
         }
-        
+
         if (active_ships.size() < 2) return {nullptr, nullptr};
-        
-        // Retorna a primeira e a última nave ativa para evitar erros de índice
-        return {active_ships.front(), active_ships.back()};
+        // Garante o comportamento orgânico da mira azul.
+        float min_dist_sq = 99999999.0f;
+        entities::Invader* p1 = nullptr;
+        entities::Invader* p2 = nullptr;
+
+        for (size_t i = 0; i < active_ships.size(); ++i) {
+            for (size_t j = i + 1; j < active_ships.size(); ++j) {
+                float dx = active_ships[i]->x - active_ships[j]->x;
+                float dy = active_ships[i]->y - active_ships[j]->y;
+                float dist_sq = dx * dx + dy * dy;
+
+                if (dist_sq < min_dist_sq) {
+                    min_dist_sq = dist_sq;
+                    p1 = active_ships[i];
+                    p2 = active_ships[j];
+                }
+            }
+        }
+        return {p1, p2};
     }
 
 }
