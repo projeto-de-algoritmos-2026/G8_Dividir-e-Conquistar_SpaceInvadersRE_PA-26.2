@@ -7,6 +7,11 @@ namespace space_invaders::entities {
     std::optional<Projectile> Player::update(float screen_width) {
         float dt = GetFrameTime();
 
+        // --- ATUALIZAÇÃO DA INVULNERABILIDADE ---
+        if (invulnerability_timer > 0.0f) {
+            invulnerability_timer -= dt;
+        }
+
         if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) {
             position.x -= speed * dt;
         }
@@ -31,12 +36,25 @@ namespace space_invaders::entities {
             Projectile p;
             p.x = position.x + (size.x / 2.0f) - (p.width / 2.0f);
             p.y = position.y;
+            p.velocity_y = -600.0f;
             return p;
         }
         return std::nullopt; // se não houve projetio retorna nulo
     }
+    void Player::take_damage() {
+        if (invulnerability_timer <= 0.0f) {
+            lives--;
+            invulnerability_timer = 1.5f; // 1.5s de imunidade
+        }
+    }
 
     void Player::draw() const {
+        // Pisca a nave quando toma dano
+        if (invulnerability_timer > 0.0f) {
+            if (static_cast<int>(invulnerability_timer * 10) % 2 == 0) {
+                return;
+            }
+        }
         DrawRectangleRec(get_rect(), color);
     }
 }

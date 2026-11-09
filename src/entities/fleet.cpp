@@ -129,6 +129,35 @@ namespace space_invaders::entities {
         }
     }
 
+    std::optional<Projectile> Fleet::try_shoot(float dt) {
+        time_since_last_shot += dt;
+
+        // Frota só dispara se o intervalo passou e não estiver congelada
+        if (time_since_last_shot >= shoot_cooldown && !is_frozen) {
+            time_since_last_shot = 0.0f;
+
+            std::vector<Invader*> alive_invaders;
+            for (auto& invader : invaders) {
+                if (invader.is_alive) {
+                    alive_invaders.push_back(&invader);
+                }
+            }
+
+            if (!alive_invaders.empty()) {
+                int random_index = GetRandomValue(0, static_cast<int>(alive_invaders.size()) - 1);
+                Invader* shooter = alive_invaders[random_index];
+
+                Projectile p;
+                p.x = shooter->x + (shooter->width / 2.0f) - (p.width / 2.0f);
+                p.y = shooter->y + shooter->height;
+                p.velocity_y = 350.0f; // Dispara para baixo
+                p.color = RED;
+                return p;
+            }
+        }
+        return std::nullopt;
+    }
+
     void Fleet::update_effects() {
         float dt = GetFrameTime();
         for (auto& l : active_lightnings) l.lifetime -= dt;
