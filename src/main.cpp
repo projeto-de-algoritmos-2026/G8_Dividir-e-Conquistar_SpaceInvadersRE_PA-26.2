@@ -28,6 +28,7 @@ int main() {
     std::vector<space_invaders::entities::Projectile> enemy_projectiles; // NOVO: Tiros da frota
 
     GameState current_state = GameState::PLAYING;
+    int score = 0;
 
     while (!WindowShouldClose()) {
 
@@ -91,9 +92,19 @@ int main() {
                         if (!shield_active || is_commander || is_closest_pair) {
                             invader.is_alive = false;
 
+                            // ---------------------------------------------
+                            // MATEMÁTICA DA PONTUAÇÃO (ARCADE SCORING)
+                            // ---------------------------------------------
+                            if (is_commander) {
+                                score += 100; // Bónus massivo por abater o Comandante
+                            } else {
+                                score += 10;  // Pontos normais por nave base (ou alvo azul)
+                            }
+
                             // Gatilho do Raio em Cadeia
                             if (is_closest_pair) {
-                                enemy_fleet.trigger_chain_lightning(&invader, 3);
+                                int chained_kills = enemy_fleet.trigger_chain_lightning(&invader, 3);
+                                score += (chained_kills * 50); // Bónus tático: +50 por cada vizinho destruído
                             }
                         }
                         break;
@@ -161,9 +172,13 @@ int main() {
                 DrawText("PAR MAIS PROXIMO", static_cast<int>(p1->x), static_cast<int>(p1->y) - 15, 9, BLUE);
             }
 
+            // --- Interface / HUD ---
             DrawText(TextFormat("Naves Ativas: %d", active_ships), 10, 10, 20, LIME);
             DrawText(TextFormat("Vidas: %d", player.get_lives()), 10, 40, 20, RED);
             DrawText("USE AS SETAS OU 'A'/'D' PARA MOVER E 'ESPACO' PARA DISPARAR", 10, 70, 14, GRAY);
+
+            // Placar formatado com 6 dígitos alinhado à direita
+            DrawText(TextFormat("SCORE: %06d", score), screen_width - 250, 10, 20, GOLD);
 
         } else if (current_state == GameState::GAME_OVER) {
             const char* text = "GAME OVER";
@@ -171,11 +186,17 @@ int main() {
             int text_width = MeasureText(text, font_size);
             DrawText(text, (screen_width - text_width) / 2, screen_height / 2 - 30, font_size, RED);
 
+            // Exibe a pontuação final no ecrã de Derrota
+            DrawText(TextFormat("SCORE FINAL: %06d", score), (screen_width - MeasureText(TextFormat("SCORE FINAL: %06d", score), 30)) / 2, screen_height / 2 + 50, 30, GOLD);
+
         } else if (current_state == GameState::VICTORY) {
             const char* text = "VITORIA!";
             int font_size = 60;
             int text_width = MeasureText(text, font_size);
             DrawText(text, (screen_width - text_width) / 2, screen_height / 2 - 30, font_size, GREEN);
+
+            // Exibe a pontuação final no ecrã de Vitória
+            DrawText(TextFormat("SCORE FINAL: %06d", score), (screen_width - MeasureText(TextFormat("SCORE FINAL: %06d", score), 30)) / 2, screen_height / 2 + 50, 30, GOLD);
         }
 
         EndDrawing();
