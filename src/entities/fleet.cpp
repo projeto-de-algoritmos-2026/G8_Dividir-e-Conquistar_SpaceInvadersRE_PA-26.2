@@ -99,7 +99,7 @@ namespace space_invaders::entities {
         return invaders;
     }
 
-    void Fleet::trigger_chain_lightning(Invader* origin, int max_targets) {
+    int Fleet::trigger_chain_lightning(Invader* origin, int max_targets) {
         std::vector<std::pair<float, Invader*>> distances;
 
         for (auto& inv : invaders) {
@@ -127,6 +127,7 @@ namespace space_invaders::entities {
             });
             count++;
         }
+        return count;
     }
 
     std::optional<Projectile> Fleet::try_shoot(float dt) {

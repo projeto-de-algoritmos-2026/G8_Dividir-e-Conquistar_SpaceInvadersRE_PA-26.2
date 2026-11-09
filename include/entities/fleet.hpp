@@ -39,7 +39,7 @@ namespace space_invaders::entities {
         void draw() const;
         std::vector<Invader>& get_invaders();
 
-        void trigger_chain_lightning(Invader* origin, int max_targets = 3);
+        int trigger_chain_lightning(Invader* origin, int max_targets = 3);
         void update_effects();
         void draw_effects() const;
     };
