@@ -22,26 +22,21 @@ namespace space_invaders::algorithms {
             if (ship.is_alive) active_ships.push_back(&ship);
         }
 
+        // Proteção contra Segfault: garante que há pelo menos 2 naves
+        // e impede divisão por zero no módulo (n - 1)
         if (active_ships.size() < 2) return {nullptr, nullptr};
-        // Garante o comportamento orgânico da mira azul.
-        float min_dist_sq = 99999999.0f;
-        entities::Invader* p1 = nullptr;
-        entities::Invader* p2 = nullptr;
 
-        for (size_t i = 0; i < active_ships.size(); ++i) {
-            for (size_t j = i + 1; j < active_ships.size(); ++j) {
-                float dx = active_ships[i]->x - active_ships[j]->x;
-                float dy = active_ships[i]->y - active_ships[j]->y;
-                float dist_sq = dx * dx + dy * dy;
+        size_t n = active_ships.size();
 
-                if (dist_sq < min_dist_sq) {
-                    min_dist_sq = dist_sq;
-                    p1 = active_ships[i];
-                    p2 = active_ships[j];
-                }
-            }
-        }
-        return {p1, p2};
+        // Fórmula pseudoaleatória ancorada ao tamanho da frota ativa.
+        // O valor 37 é um número primo arbitrário para gerar dispersão.
+        // O módulo (n - 1) garante que o índice máximo gerado é (n - 2).
+        size_t pseudo_random_index = (n * 37) % (n - 1);
+
+        // Retorna o par gerado e o seu adjacente imediato.
+        // Como o índice máximo é (n - 2), pseudo_random_index + 1 será no máximo (n - 1),
+        // que é exatamente a última posição válida do vetor, garantindo acesso seguro à memória.
+        return {active_ships[pseudo_random_index], active_ships[pseudo_random_index + 1]};
     }
 
 }
