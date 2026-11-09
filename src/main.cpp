@@ -3,7 +3,11 @@
 #include "entities/fleet.hpp"
 #include "algorithms/algorithms.hpp"
 #include "entities/player.hpp"
-
+enum class GameState {
+    PLAYING,
+    GAME_OVER,
+    VICTORY
+};
 int main() {
     constexpr int screen_width = 1280;
     constexpr int screen_height = 720;
@@ -16,103 +20,116 @@ int main() {
 
     space_invaders::entities::Player player((screen_width / 2.0f) - 25.0f, static_cast<float>(screen_height) - 80.0f, 50.0f, 25.0f, 400.0f);
     std::vector<space_invaders::entities::Projectile> player_projectiles;
+    GameState current_state = GameState::PLAYING;
 
     while (!WindowShouldClose()) {
-        // --- Atualização ---
-        auto new_shot = player.update(static_cast<float>(screen_width));
-        if (new_shot.has_value()) {
-            player_projectiles.push_back(new_shot.value());
-        }
 
-        float dt = GetFrameTime();
-        for (auto& p : player_projectiles) p.update(dt);
-        std::erase_if(player_projectiles, [](const auto& p) { return !p.is_active; });
-        
-        float fleet_bottom_limit = player.get_position().y - 10.0f;
-        enemy_fleet.update(static_cast<float>(screen_width), fleet_bottom_limit);
-        enemy_fleet.update_effects();
-
+        // --- 1. Leitura de Dados Partilhados (Física e Desenho) ---
         auto& invaders = enemy_fleet.get_invaders();
-
-        // 1. Executa os algoritmos ANTES das colisões para ter os alvos atualizados
         auto* commander = space_invaders::algorithms::find_commander(invaders);
         auto closest_pair = space_invaders::algorithms::find_closest_pair(invaders);
-
-        // 2. Loop de Colisões
-        for (auto& p : player_projectiles) {
-            if (!p.is_active) continue;
-
-            for (auto& invader : invaders) {
-                if (!invader.is_alive) continue;
-
-                Rectangle proj_rect = {p.x, p.y, p.width, p.height};
-                Rectangle inv_rect = {invader.x, invader.y, invader.width, invader.height};
-
-                if (CheckCollisionRecs(proj_rect, inv_rect)) {
-                    invader.is_alive = false; 
-                    p.is_active = false;      
-
-                    // Gatilho do Raio em Cadeia se acertar no Par Mais Próximo
-                    if (&invader == closest_pair.first || &invader == closest_pair.second) {
-                        enemy_fleet.trigger_chain_lightning(&invader, 3);
-                    }
-                    
-                    break; // Passa para o próximo tiro
-                }
-            }
-        }
-
-        // --- Renderização (Desenho) ---
-        BeginDrawing();
-        ClearBackground(BLACK);
-        enemy_fleet.draw();
-        enemy_fleet.draw_effects();
-
-        player.draw();
-        for (const auto& p : player_projectiles) {
-            p.draw();
-        }
-
-        // Destaca a nave comandante (se encontrada e viva)
-        if (commander != nullptr && commander->is_alive) {
-            // Desenha um quadrado de mira em volta da nave
-            DrawRectangleLinesEx(
-                Rectangle{commander->x - 5, commander->y - 5, commander->width + 10, commander->height + 10},
-                2.0f,
-                PURPLE
-            );
-            // apenas para testar depois remover e deixar apenas o contorno
-            DrawText("ALVO: COMANDANTE", static_cast<int>(commander->x) - 30, static_cast<int>(commander->y) - 15, 9, PURPLE);
-        }
-
-
-        // Destaca as duas naves do Par Mais Próximo (se existirem e estiverem vivas)
-        if (closest_pair.first != nullptr && closest_pair.second != nullptr) {
-            auto* p1 = closest_pair.first;
-            auto* p2 = closest_pair.second;
-
-            // Caixas de mira em ciano para as duas naves
-            DrawRectangleLinesEx(Rectangle{p1->x - 5, p1->y - 5, p1->width + 10, p1->height + 10}, 2.0f, BLUE);
-            DrawRectangleLinesEx(Rectangle{p2->x - 5, p2->y - 5, p2->width + 10, p2->height + 10}, 2.0f, BLUE);
-
-            // Desenha uma linha a conectar os centros das duas naves
-            DrawLineEx(
-                Vector2{p1->x + p1->width/2, p1->y + p1->height/2},
-                Vector2{p2->x + p2->width/2, p2->y + p2->height/2},
-                2.0f,
-                BLUE
-            );
-            // apenas para testar depois remover e deixar apenas o contorno
-            DrawText("PAR MAIS PROXIMO", static_cast<int>(p1->x), static_cast<int>(p1->y) - 15, 9, BLUE);
-        }
-
-        // Calcula dinamicamente quantas naves continuam com is_alive = true
+        float fleet_bottom_limit = player.get_position().y - 10.0f;
         int active_ships = static_cast<int>(std::ranges::count_if(invaders, [](const auto& ship) {
             return ship.is_alive;
         }));
 
-        DrawText(TextFormat("Naves Ativas: %d", active_ships), 10, 10, 20, LIME);
-        DrawText("USE AS SETAS OU 'A'/'D' PARA MOVER A NAVE", 10, 40, 14, GRAY);
+        // --- 2. Atualização (Apenas corre se o jogo estiver ativo) ---
+        if (current_state == GameState::PLAYING) {
+            auto new_shot = player.update(static_cast<float>(screen_width));
+            if (new_shot.has_value()) {
+                player_projectiles.push_back(new_shot.value());
+            }
+
+            float dt = GetFrameTime();
+            for (auto& p : player_projectiles) p.update(dt);
+            std::erase_if(player_projectiles, [](const auto& p) { return !p.is_active; });
+
+            enemy_fleet.update(static_cast<float>(screen_width), fleet_bottom_limit);
+            enemy_fleet.update_effects();
+
+            // Loop de Colisões
+            for (auto& p : player_projectiles) {
+                if (!p.is_active) continue;
+
+                for (auto& invader : invaders) {
+                    if (!invader.is_alive) continue;
+
+                    Rectangle proj_rect = {p.x, p.y, p.width, p.height};
+                    Rectangle inv_rect = {invader.x, invader.y, invader.width, invader.height};
+
+                    if (CheckCollisionRecs(proj_rect, inv_rect)) {
+                        invader.is_alive = false;
+                        p.is_active = false;
+
+                        // Gatilho do Raio em Cadeia
+                        if (&invader == closest_pair.first || &invader == closest_pair.second) {
+                            enemy_fleet.trigger_chain_lightning(&invader, 3);
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            // --- Condições de Vitória e Derrota ---
+            // Como destruímos naves neste frame, recalculamos rapidamente para a vitória ser imediata
+            int ships_alive_now = static_cast<int>(std::ranges::count_if(invaders, [](const auto& ship) { return ship.is_alive; }));
+
+            if (ships_alive_now == 0) {
+                current_state = GameState::VICTORY;
+            } else {
+                float danger_zone = player.get_position().y - 40.0f;
+                for (const auto& invader : invaders) {
+                    if (invader.is_alive && (invader.y + invader.height >= danger_zone)) {
+                        current_state = GameState::GAME_OVER;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // --- 3. Renderização (Desenho) ---
+        BeginDrawing();
+        ClearBackground(BLACK);
+        if (current_state == GameState::PLAYING) {
+            // Desenha o jogo apenas se estiver a decorrer
+            enemy_fleet.draw();
+            enemy_fleet.draw_effects();
+
+            player.draw();
+            for (const auto& p : player_projectiles) p.draw();
+
+            if (commander != nullptr && commander->is_alive) {
+                DrawRectangleLinesEx(Rectangle{commander->x - 5, commander->y - 5, commander->width + 10, commander->height + 10}, 2.0f, PURPLE);
+                DrawText("ALVO: COMANDANTE", static_cast<int>(commander->x) - 30, static_cast<int>(commander->y) - 15, 9, PURPLE);
+            }
+
+            if (closest_pair.first != nullptr && closest_pair.second != nullptr) {
+                auto* p1 = closest_pair.first;
+                auto* p2 = closest_pair.second;
+                DrawRectangleLinesEx(Rectangle{p1->x - 5, p1->y - 5, p1->width + 10, p1->height + 10}, 2.0f, BLUE);
+                DrawRectangleLinesEx(Rectangle{p2->x - 5, p2->y - 5, p2->width + 10, p2->height + 10}, 2.0f, BLUE);
+                DrawLineEx(Vector2{p1->x + p1->width/2, p1->y + p1->height/2}, Vector2{p2->x + p2->width/2, p2->y + p2->height/2}, 2.0f, BLUE);
+                DrawText("PAR MAIS PROXIMO", static_cast<int>(p1->x), static_cast<int>(p1->y) - 15, 9, BLUE);
+            }
+
+            DrawText(TextFormat("Naves Ativas: %d", active_ships), 10, 10, 20, LIME);
+            DrawText("USE AS SETAS OU 'A'/'D' PARA MOVER A NAVE", 10, 40, 14, GRAY);
+
+        } else if (current_state == GameState::GAME_OVER) {
+            // Ecrã limpo apenas com GAME OVER
+            const char* text = "GAME OVER";
+            int font_size = 60;
+            int text_width = MeasureText(text, font_size);
+            DrawText(text, (screen_width - text_width) / 2, screen_height / 2 - 30, font_size, RED);
+
+        } else if (current_state == GameState::VICTORY) {
+            // Ecrã limpo apenas com VITÓRIA
+            const char* text = "VITORIA!";
+            int font_size = 60;
+            int text_width = MeasureText(text, font_size);
+            DrawText(text, (screen_width - text_width) / 2, screen_height / 2 - 30, font_size, GREEN);
+        }
 
         EndDrawing();
     }
