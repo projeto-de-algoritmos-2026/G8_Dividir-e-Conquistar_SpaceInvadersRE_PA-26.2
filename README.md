@@ -1,6 +1,9 @@
 # G8_D-C_SpaceInvadersRE_PA-26.2
+
 Link do video: https://youtu.be/xiQinfLz6R4
 # || 👾 Space Invaders: Dividir e Conquistar 👾 ||
+
+<img width="1271" height="719" alt="image" src="https://github.com/user-attachments/assets/32bd9b16-b58e-4e29-ae63-15735996cb59" />
 
 Este projeto irá ser uma recriação moderna e caótica do clássico *Space Invaders*, desenvolvido em **C++** com a biblioteca **Raylib**. O objetivo principal é demonstrar a aplicação prática do paradigma de **Dividir e Conquistar** para otimizar o desempenho ao processar frotas massivas de inimigos.
 
